@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for
 from mongoengine import ValidationError
 from mongoengine.queryset import DoesNotExist
 from models import Project, Author
@@ -6,7 +6,7 @@ from models import Project, Author
 app = Flask(__name__)
 
 
-@app.route('/projects/', methods=['POST'])
+@app.route('/projects', methods=['POST'])
 def create_project():
     json = request.get_json()
 
@@ -15,25 +15,19 @@ def create_project():
     project = Project(**json)
     project.save()
 
+    Author.objects(id=project.author_id).update_one(push__projects=project.id)
+
     return jsonify(project.to_dict()), 201
 
 
-@app.route('/projects/')
+@app.route('/projects')
 def get_projects():
-    page = request.args.get('page', 1)
-    per_page = request.args.get('per_page', 10)
-    offset = (page - 1) * per_page
-
-    projects = [project.to_dict() for project in Project.objects[offset:per_page]]
-
-    return jsonify(projects=projects)
+    return paginate(resource_name='projects', view_func_name='get_projects', get_objects_func=lambda: Project.objects)
 
 
 @app.route('/projects/<project_id>')
 def get_project_details(project_id):
-    project = Project.objects(id=project_id).get()
-
-    return project.to_json()
+    return jsonify(Project.objects(id=project_id).get().to_dict())
 
 
 @app.route('/projects/<project_id>', methods=['PUT'])
@@ -46,12 +40,58 @@ def delete_project(project_id):
     project = Project.objects(id=project_id).get()
     project.delete()
 
+    Author.objects(id=project.author_id).update_one(pull__projects=project.id)
+
     return project.to_json()
+
+
+@app.route('/authors', methods=['POST'])
+def create_author():
+    author = Author(**request.get_json())
+    author.save()
+
+    return jsonify(author.to_dict()), 201
+
+
+@app.route('/authors', methods=['GET'])
+def get_authors():
+    return paginate(resource_name='authors', view_func_name='get_authors', get_objects_func=lambda: Author.objects)
+
+
+@app.route('/authors/<author_id>', methods=['GET'])
+def get_author_details(author_id):
+    return jsonify(Author.objects(id=author_id).get().to_dict())
 
 
 def assert_author_exists(author_id):
     if author_id is not None:
         Author.objects.get(id=author_id)
+
+
+def paginate(resource_name, view_func_name, get_objects_func):
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 10))
+    offset = (page - 1) * per_page
+
+    objects = get_objects_func()
+    paginated_objects = objects.skip(offset).limit(per_page)
+
+    objects_count = objects.count()
+    paginated_objects_count = paginated_objects.count()
+
+    metadata = dict(page=page, per_page=per_page, page_count=paginated_objects_count, total_count=objects_count)
+    metadata['links'] = dict(self=url_for(view_func_name, page=page, per_page=per_page))
+
+    if page > 1:
+        metadata['links']['prev'] = url_for(view_func_name, page=page - 1, per_page=per_page)
+        metadata['links']['first'] = url_for(view_func_name, page=1, per_page=per_page)
+
+    if page * per_page < objects_count:
+        metadata['links']['next'] = url_for(view_func_name, page=page + 1, per_page=per_page)
+        metadata['links']['last'] = url_for(view_func_name, page=(objects_count / per_page) +
+                                                                 (objects_count % per_page), per_page=per_page)
+
+    return jsonify({'metadata': metadata, resource_name: [obj.to_dict() for obj in paginated_objects]})
 
 
 @app.errorhandler(ValidationError)

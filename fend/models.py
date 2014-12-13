@@ -17,6 +17,7 @@ class Project(Document):
 
 class Author(Document):
     name = StringField(required=True)
+    projects = ListField(ObjectIdField())
 
     def to_dict(self):
         return document_to_dict(self)
