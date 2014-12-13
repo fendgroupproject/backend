@@ -1,9 +1,15 @@
 from bson.objectid import ObjectId
 from datetime import datetime
-
+from bson.son import SON
 
 def document_to_dict(document):
     return _sanitize(document.to_mongo().to_dict())
+
+
+def merge(document, dict):
+    s = SON(dict)
+
+    return document
 
 
 def _sanitize(value):
@@ -31,7 +37,7 @@ def _sanitize_scalar(s):
     if type(s) is ObjectId:
         return str(s)
 
-    if type(s) is datetime:
-        return s.isoformat()
+    # if type(s) is datetime:
+    #     return s.isoformat()
 
     return s

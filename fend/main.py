@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, url_for
+from itertools import chain
 from mongoengine import ValidationError
 from mongoengine.queryset import DoesNotExist
 from models import Project, Author
@@ -28,7 +29,12 @@ def get_project(project_id):
 
 @app.route('/projects/<project_id>', methods=['PUT'])
 def update_project(project_id):
-    pass
+    # Project.objects(id=project_id).update_one(**dict([('set__' + key, value) for key, value in json.iteritems()]))
+    project = Project.objects(id=project_id).get()
+    updated = Project(**dict(chain(project.to_dict().items(), request.get_json().items())))
+    updated.save()
+
+    return jsonify(updated.to_dict())
 
 
 @app.route('/projects/<project_id>', methods=['DELETE'])
@@ -38,7 +44,7 @@ def delete_project(project_id):
 
     Author.objects(id=project.author_id).update_one(pull__projects=project.id)
 
-    return project.to_json()
+    return jsonify(project.to_dict())
 
 
 @app.route('/authors', methods=['GET', 'POST'])
@@ -58,12 +64,22 @@ def get_author(author_id):
 
 @app.route('/authors/<author_id>', methods=['PUT'])
 def update_author(author_id):
-    pass
+    author = Author.objects(id=author_id).get()
+    updated = Author(**dict(chain(author.to_dict().items(), request.get_json().items())))
+    updated.save()
+
+    return jsonify(updated.to_dict())
 
 
 @app.route('/authors/<author_id>', methods=['DELETE'])
 def delete_author(author_id):
-    pass
+    author = Author.objects(id=author_id).get()
+    for project_id in author.projects:
+        delete_project(project_id)
+
+    author.delete()
+
+    return jsonify(author.to_dict())
 
 
 def assert_author_exists(author_id):
@@ -91,8 +107,12 @@ def paginate(resource_name, view_func_name, get_objects_func):
 
     if page * per_page < objects_count:
         metadata['links']['next'] = url_for(view_func_name, page=page + 1, per_page=per_page)
-        metadata['links']['last'] = url_for(view_func_name, page=(objects_count / per_page) +
-                                                                 (objects_count % per_page), per_page=per_page)
+
+        last_page = objects_count / per_page
+        if objects_count % per_page > 0:
+            last_page += 1
+
+        metadata['links']['last'] = url_for(view_func_name, page=last_page, per_page=per_page)
 
     return jsonify({'metadata': metadata, resource_name: [obj.to_dict() for obj in paginated_objects]})
 
