@@ -6,27 +6,23 @@ from models import Project, Author
 app = Flask(__name__)
 
 
-@app.route('/projects', methods=['POST'])
-def create_project():
-    json = request.get_json()
+@app.route('/projects', methods=['GET', 'POST'])
+def projects():
+    if request.method == 'GET':
+        return paginate(resource_name='projects', view_func_name='projects', get_objects_func=lambda: Project.objects)
 
+    json = request.get_json()
     assert_author_exists(json.get('author_id'))
 
     project = Project(**json)
     project.save()
-
     Author.objects(id=project.author_id).update_one(push__projects=project.id)
 
     return jsonify(project.to_dict()), 201
 
 
-@app.route('/projects')
-def get_projects():
-    return paginate(resource_name='projects', view_func_name='get_projects', get_objects_func=lambda: Project.objects)
-
-
 @app.route('/projects/<project_id>')
-def get_project_details(project_id):
+def get_project(project_id):
     return jsonify(Project.objects(id=project_id).get().to_dict())
 
 
@@ -45,22 +41,29 @@ def delete_project(project_id):
     return project.to_json()
 
 
-@app.route('/authors', methods=['POST'])
-def create_author():
+@app.route('/authors', methods=['GET', 'POST'])
+def authors():
+    if request.method == 'GET':
+        return paginate(resource_name='authors', view_func_name='authors', get_objects_func=lambda: Author.objects)
+
     author = Author(**request.get_json())
     author.save()
-
     return jsonify(author.to_dict()), 201
 
 
-@app.route('/authors', methods=['GET'])
-def get_authors():
-    return paginate(resource_name='authors', view_func_name='get_authors', get_objects_func=lambda: Author.objects)
-
-
 @app.route('/authors/<author_id>', methods=['GET'])
-def get_author_details(author_id):
+def get_author(author_id):
     return jsonify(Author.objects(id=author_id).get().to_dict())
+
+
+@app.route('/authors/<author_id>', methods=['PUT'])
+def update_author(author_id):
+    pass
+
+
+@app.route('/authors/<author_id>', methods=['DELETE'])
+def delete_author(author_id):
+    pass
 
 
 def assert_author_exists(author_id):
