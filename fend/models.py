@@ -1,5 +1,5 @@
-from mongoengine import Document, StringField, ObjectIdField, URLField, DateTimeField
-from datetime import datetime
+from mongoengine import Document, StringField, ObjectIdField, URLField, DateTimeField, ListField
+from helpers import *
 
 
 class Project(Document):
@@ -11,7 +11,13 @@ class Project(Document):
     link = URLField(required=True)
     created_at = DateTimeField(default=datetime.now, required=True)
 
+    def to_dict(self):
+        return document_to_dict(self)
+
 
 class Author(Document):
     name = StringField(required=True)
+
+    def to_dict(self):
+        return document_to_dict(self)
 
