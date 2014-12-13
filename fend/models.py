@@ -25,9 +25,6 @@ class Project(Document):
     def to_dict(self):
         return document_to_dict(self)
 
-    def merge(self, fields):
-        return Project(**dict(self.to_mongo().to_dict() + fields))
-
 
 class Author(Document):
     name = StringField(required=True)
