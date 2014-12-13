@@ -1,6 +1,7 @@
 from bson.objectid import ObjectId
 # from datetime import datetime
 
+
 def document_to_dict(document):
     return _sanitize(document.to_mongo().to_dict())
 

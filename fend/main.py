@@ -54,6 +54,7 @@ def authors():
 
     author = Author(**request.get_json())
     author.save()
+
     return jsonify(author.to_dict()), 201
 
 
@@ -128,3 +129,7 @@ def handle_validation_error(error):
 @app.errorhandler(DoesNotExist)
 def handle_does_not_exist(error):
     return jsonify(error=error.message), 404
+
+@app.errorhandler(400)
+def handle_bad_request(error):
+    return jsonify(error='error parsing JSON'), 400
