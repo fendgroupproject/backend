@@ -128,6 +128,12 @@ def handle_validation_error(error):
 def handle_does_not_exist(error):
     return jsonify(error=error.message), 404
 
+
+@app.errorhandler(ValueError)
+def handle_value_error(error):
+    return jsonify(error='wrong url parameter type'), 400
+
+
 @app.errorhandler(400)
 def handle_bad_request(error):
     return jsonify(error='error parsing JSON'), 400
