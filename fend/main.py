@@ -10,7 +10,7 @@ app = Flask(__name__)
 @app.route('/projects', methods=['GET', 'POST'])
 def projects():
     if request.method == 'GET':
-        return paginate(resource_name='projects', view_func_name='projects', get_objects_func=lambda: Project.objects)
+        return paginate(resource_name='projects', view_func_name='projects', objects=Project.objects)
 
     json = request.get_json()
     assert_author_exists(json.get('author_id'))
@@ -27,14 +27,13 @@ def get_project(project_id):
     return jsonify(Project.objects(id=project_id).get().to_dict())
 
 
-@app.route('/projects/<project_id>', methods=['PUT'])
+@app.route('/projects/<project_id>', methods=['PATCH'])
 def update_project(project_id):
-    # Project.objects(id=project_id).update_one(**dict([('set__' + key, value) for key, value in json.iteritems()]))
     project = Project.objects(id=project_id).get()
-    updated = Project(**dict(chain(project.to_dict().items(), request.get_json().items())))
-    updated.save()
+    patched = Project(**dict(chain(project.to_dict().items(), request.get_json().items())))
+    patched.save()
 
-    return jsonify(updated.to_dict())
+    return jsonify(patched.to_dict())
 
 
 @app.route('/projects/<project_id>', methods=['DELETE'])
@@ -50,7 +49,7 @@ def delete_project(project_id):
 @app.route('/authors', methods=['GET', 'POST'])
 def authors():
     if request.method == 'GET':
-        return paginate(resource_name='authors', view_func_name='authors', get_objects_func=lambda: Author.objects)
+        return paginate(resource_name='authors', view_func_name='authors', objects=Author.objects)
 
     author = Author(**request.get_json())
     author.save()
@@ -63,13 +62,13 @@ def get_author(author_id):
     return jsonify(Author.objects(id=author_id).get().to_dict())
 
 
-@app.route('/authors/<author_id>', methods=['PUT'])
+@app.route('/authors/<author_id>', methods=['PATCH'])
 def update_author(author_id):
     author = Author.objects(id=author_id).get()
-    updated = Author(**dict(chain(author.to_dict().items(), request.get_json().items())))
-    updated.save()
+    patched = Author(**dict(chain(author.to_dict().items(), request.get_json().items())))
+    patched.save()
 
-    return jsonify(updated.to_dict())
+    return jsonify(patched.to_dict())
 
 
 @app.route('/authors/<author_id>', methods=['DELETE'])
@@ -88,12 +87,11 @@ def assert_author_exists(author_id):
         Author.objects.get(id=author_id)
 
 
-def paginate(resource_name, view_func_name, get_objects_func):
+def paginate(resource_name, view_func_name, objects):
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 10))
     offset = (page - 1) * per_page
 
-    objects = get_objects_func()
     paginated_objects = objects.skip(offset).limit(per_page)
 
     objects_count = objects.count()
