@@ -12,8 +12,6 @@ def projects():
     """Retrieves a list of projects from the database or create a new project.
     When retrieving a list of projects, the URL can contain pagination parameters
     page and per_page which default respectively to 1 and 10 if omitted.
-    When creating a new project, the representation of the project must be
-    passed in the request body in JSON.
     """
     if request.method == 'GET':
         return paginate(resource_name='projects', endpoint='projects', objects=Project.objects)
