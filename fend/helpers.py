@@ -3,6 +3,13 @@ from bson.objectid import ObjectId
 
 
 def document_to_dict(document):
+    """Converts a mongoengine Document to a Python dict.
+    Builds an external representation of the document. For
+    example convert `'_id': ObjectId('54dqf8ad6sdfq14ad')` to
+    ''id': '54dqf8ad6sdfq14ad'`.
+
+    :param document: the mongoengine Document to convert
+    """
     return _sanitize(document.to_mongo().to_dict())
 
 

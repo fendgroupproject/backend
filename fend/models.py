@@ -13,10 +13,18 @@ class Project(Document):
     created_at = DateTimeField(default=datetime.now, required=True)
 
     def clean(self):
+        """Ensures that the name of the project is not empty."""
         if self.name is not None and type(self.name) is unicode and not self.name.strip():
                 raise ValidationError(field_name='name', message='Field can not be empty.')
 
     def validate(self, clean=True):
+        """Calls the parent `validate(self, clean)`. If `ValidationError` is raised, checks if
+        the error is about the emptiness of the field `name`. If yes, raises a new properly
+        formatted `ValidationError`, if no raises the error as it is.
+
+        :param self: the document to validate.
+        :param clean: whether to run the `clean(self)` function or not.
+        """
         try:
             Document.validate(self, clean)
         except ValidationError as e:
