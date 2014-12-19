@@ -135,8 +135,7 @@ def paginate(resource_name, endpoint, objects, endpoint_params={}):
     :param resource_name: the name of the resource to retrieve.
     :param endpoint: the name of the function handling the GET request.
     :param objects: the list of database documents to paginate.
-    :param endpoint_params: dict of other necessary URL parameters other than page and per_page. This
-        parameter is necessary for building the pagination links.
+    :param endpoint_params: dict of necessary URL parameters other than page and per_page.
     """
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 10))

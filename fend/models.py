@@ -39,6 +39,17 @@ class Author(Document):
     name = StringField(required=True)
     projects = ListField(ObjectIdField())
 
+    def clean(self):
+        if self.name is not None and type(self.name) is unicode and not self.name.strip():
+            raise ValidationError(field_name='name', message='Field can not be empty.')
+
+    def validate(self, clean=True):
+        try:
+            Document.validate(self, clean)
+        except ValidationError as e:
+            error = e.errors.get('__all__')
+            raise ValidationError(errors={error.field_name: error.message}) if error is not None else e
+
     def to_dict(self):
         return document_to_dict(self)
 
