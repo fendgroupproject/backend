@@ -10,3 +10,9 @@ MONGO_DATABASE = {
     'db_name': 'fend',
     'connection_alias': 'default',
 }
+
+MONGO_TEST_DATABASE = {
+    'db_alias': 'default',
+    'db_name': 'test_fend',
+    'connection_alias': 'default',
+}

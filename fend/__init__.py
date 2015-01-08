@@ -1,5 +1,10 @@
 from mongoengine import connect
+import settings
 
-# from fend.models import Test
+def setup(test=False):
+    if test:
+        db = settings.MONGO_TEST_DATABASE
+    else:
+        db = settings.MONGO_DATABASE
 
-connect(db='fend', alias='default')
+    connect(db=db['db_name'], alias=db['db_alias'])
